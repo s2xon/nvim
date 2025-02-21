@@ -38,7 +38,6 @@ return {
         "prismals",
         "pyright",
         "gopls",
-        "clangd",
       },
     })
 
@@ -53,5 +52,6 @@ return {
         "gofumpt",
       },
     })
-  end,
+
+ end,
 }
