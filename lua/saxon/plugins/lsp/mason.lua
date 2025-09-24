@@ -38,6 +38,22 @@ return {
         "prismals",
         "pyright",
         "gopls",
+        "clangd",
+        "asm_lsp",
+      },
+    })
+
+    require("lspconfig").clangd.setup({
+      settings = {
+        clangd = {
+          ["clangd.arguments"] = {
+            "--clang-tidy", -- Enable clang-tidy if needed
+            "--enable-config", -- Enable to use .clangd config
+          },
+          ["clangd.formatting"] = {
+            SpacesInAngles = false, -- Disable spaces in angle brackets
+          },
+        },
       },
     })
 
@@ -50,8 +66,8 @@ return {
         "pylint",
         "eslint_d",
         "gofumpt",
+        "clang-format",
       },
     })
-
- end,
+  end,
 }

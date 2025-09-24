@@ -10,9 +10,18 @@ return {
     platform = {
       type = rojo_project() and "roblox" or "standard",
     },
+    fflags = {
+      enable_new_solver = true, -- enables the flags required for luau's new type solver
+      sync = true, -- sync currently enabled fflags with roblox's published fflags
+      DebugLuauForceStrictMode = false,
+      override = { -- override fflags passed to luau
+        LuauTableTypeMaximumStringifierLength = "0",
+      },
+    },
     types = {
-      roblox_security_level = "PluginSecurity",
-      definition_files = { "~/Downloads/Types.d.luau" },
+      --roblox_security_level = "PluginSecurity",
+      --definition_files = { "~/Types.d.luau" },
+      --/Users/saxonpayne/Downloads
     },
     sourcemap = {
       enabled = true,

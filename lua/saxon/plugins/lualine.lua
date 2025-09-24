@@ -5,6 +5,7 @@ return {
     local lualine = require("lualine")
     local lazy_status = require("lazy.status") -- to configure lazy pending updates count
 
+    --[[
     local colors = {
       blue = "#89b4f3",
       green = "##94e2d5",
@@ -14,6 +15,17 @@ return {
       fg = "1e1e2e",
       bg = "#CDD6F4",
       inactive_bg = "#11111b",
+    }
+    --]]
+    local colors = {
+      blue = "#7aa2f7", -- accent / links
+      green = "#9ece6a", -- success / diffs
+      violet = "#bb9af7", -- special keywords
+      yellow = "#e0af68", -- warnings / highlights
+      red = "#f7768e", -- errors
+      fg = "#959cbd", -- normal foreground (your VS Code override)
+      bg = "#1a1b26", -- main background
+      inactive_bg = "#202330", -- dim-selection / inactive panels
     }
 
     local my_lualine_theme = {

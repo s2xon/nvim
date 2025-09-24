@@ -9,56 +9,42 @@ return {
   },
   config = function()
     local lspconfig = require("lspconfig")
+    local mason_lspconfig = require("mason-lspconfig")
     local cmp_nvim_lsp = require("cmp_nvim_lsp")
-    local keymap = vim.keymap -- for conciseness
+    local keymap = vim.keymap
 
+    -- Keybinds on LSP attach
     local on_attach = function(_, bufnr)
       local opts = { noremap = true, silent = true, buffer = bufnr }
 
-      -- set keybindings
-      opts.desc = "Show LSP definitions"
-      keymap.set("n", "gd", "<cmd>Telescope lsp_definitions<cr>", opts)
-
-      opts.desc = "Show LSP references"
-      keymap.set("n", "gr", "<cmd>Telescope lsp_references<cr>", opts)
-
-      opts.desc = "Show LSP implementations"
-      keymap.set("n", "gi", "<cmd>Telescope lsp_implementations<cr>", opts)
-
-      opts.desc = "Show LSP type definitions"
-      keymap.set("n", "gt", "<cmd>Telescope lsp_type_definitions<cr>", opts)
-
-      opts.desc = "See available code actions"
-      keymap.set({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, opts)
-
-      opts.desc = "Smart rename"
-      keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
-
-      opts.desc = "Show buffer diagnostics"
-      keymap.set("n", "<leader>D", "<cmd>Telescope diagnostics bufnr=0<CR>", opts)
-
-      opts.desc = "Show line diagnostics"
-      keymap.set("n", "<leader>d", vim.diagnostic.open_float, opts)
-
-      opts.desc = "Go to previous diagnostic"
-      keymap.set("n", "[d", vim.diagnostic.goto_prev, opts)
-
-      opts.desc = "Go to next diagnostic"
-      keymap.set("n", "]d", vim.diagnostic.goto_next, opts)
-
-      opts.desc = "Show documentation for what is under cursor"
-      keymap.set("n", "K", vim.lsp.buf.hover, opts)
-
-      opts.desc = "Restart LSP"
-      keymap.set("n", "<leader>rs", ":LspRestart<CR>", opts)
+      keymap.set("n", "gd", "<cmd>Telescope lsp_definitions<cr>", { desc = "Go to definition", buffer = bufnr })
+      keymap.set("n", "gr", "<cmd>Telescope lsp_references<cr>", { desc = "Go to references", buffer = bufnr })
+      keymap.set("n", "gi", "<cmd>Telescope lsp_implementations<cr>", { desc = "Go to implementation", buffer = bufnr })
+      keymap.set(
+        "n",
+        "gt",
+        "<cmd>Telescope lsp_type_definitions<cr>",
+        { desc = "Go to type definition", buffer = bufnr }
+      )
+      keymap.set({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, { desc = "Code Action", buffer = bufnr })
+      keymap.set("n", "<leader>rn", vim.lsp.buf.rename, { desc = "Rename", buffer = bufnr })
+      keymap.set(
+        "n",
+        "<leader>D",
+        "<cmd>Telescope diagnostics bufnr=0<CR>",
+        { desc = "Buffer diagnostics", buffer = bufnr }
+      )
+      keymap.set("n", "<leader>d", vim.diagnostic.open_float, { desc = "Line diagnostics", buffer = bufnr })
+      keymap.set("n", "[d", vim.diagnostic.goto_prev, { desc = "Previous diagnostic", buffer = bufnr })
+      keymap.set("n", "]d", vim.diagnostic.goto_next, { desc = "Next diagnostic", buffer = bufnr })
+      keymap.set("n", "K", vim.lsp.buf.hover, { desc = "Hover Docs", buffer = bufnr })
+      keymap.set("n", "<leader>rs", ":LspRestart<CR>", { desc = "Restart LSP", buffer = bufnr })
     end
 
     local capabilities = cmp_nvim_lsp.default_capabilities()
 
-    local defaultLSPs = {
-      "sourcekit",
-    }
-
+    -- Setup SourceKit separately (manual config)
+    local defaultLSPs = { "sourcekit" }
     for _, lsp in ipairs(defaultLSPs) do
       lspconfig[lsp].setup({
         capabilities = capabilities,
@@ -67,16 +53,21 @@ return {
       })
     end
 
-    -- Change the Diagnostic symbols in the sign column (gutter)
-    local signs = { Error = " ", Warn = " ", Hint = "󰠠 ", Info = " " }
-    for type, icon in pairs(signs) do
-      local hl = "DiagnosticSign" .. type
-      vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = "" })
-    end
+    -- Setup diagnostic symbols
+    vim.diagnostic.config({
+      signs = {
+        text = {
+          [vim.diagnostic.severity.ERROR] = "",
+          [vim.diagnostic.severity.WARN] = "",
+          [vim.diagnostic.severity.HINT] = "󰠠",
+          [vim.diagnostic.severity.INFO] = "",
+        },
+      },
+    })
+    -- Setup Mason + mason-lspconfig
+    mason_lspconfig.setup()
 
-    -- Mason setup handlers for Mason-managed servers
-    require("mason-lspconfig").setup_handlers({
-      -- Default handler for installed servers
+    mason_lspconfig.setup_handlers({
       function(server_name)
         lspconfig[server_name].setup({
           capabilities = capabilities,
@@ -84,7 +75,6 @@ return {
         })
       end,
 
-      -- Other custom LSP configurations
       ["svelte"] = function()
         lspconfig["svelte"].setup({
           capabilities = capabilities,
@@ -105,6 +95,40 @@ return {
           capabilities = capabilities,
           on_attach = on_attach,
           filetypes = { "graphql", "gql", "svelte", "typescriptreact", "javascriptreact" },
+        })
+      end,
+
+      ["emmet_ls"] = function()
+        lspconfig["emmet_ls"].setup({
+          capabilities = capabilities,
+          on_attach = on_attach,
+          filetypes = {
+            "html",
+            "typescriptreact",
+            "javascriptreact",
+            "css",
+            "sass",
+            "scss",
+            "less",
+            "svelte",
+          },
+        })
+      end,
+
+      ["lua_ls"] = function()
+        lspconfig["lua_ls"].setup({
+          capabilities = capabilities,
+          on_attach = on_attach,
+          settings = {
+            Lua = {
+              diagnostics = {
+                globals = { "vim" },
+              },
+              completion = {
+                callSnippet = "Replace",
+              },
+            },
+          },
         })
       end,
     })
