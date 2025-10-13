@@ -67,6 +67,7 @@ return {
         "eslint_d",
         "gofumpt",
         "clang-format",
+        "rustfmt",
       },
     })
   end,
