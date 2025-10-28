@@ -11,36 +11,33 @@ return {
       type = rojo_project() and "roblox" or "standard",
     },
     fflags = {
-      enable_new_solver = true, -- enables the flags required for luau's new type solver
-      sync = true, -- sync currently enabled fflags with roblox's published fflags
+      enable_new_solver = true,
+      sync = true,
       DebugLuauForceStrictMode = false,
-      override = { -- override fflags passed to luau
+      override = {
         LuauTableTypeMaximumStringifierLength = "0",
       },
     },
-    types = {
-      --roblox_security_level = "PluginSecurity",
-      --definition_files = { "~/Types.d.luau" },
-      --/Users/saxonpayne/Downloads
-    },
+    types = {},
+
     sourcemap = {
       enabled = true,
-      autogenerate = true, -- automatic generation when the server is attached
+      autogenerate = true,
       rojo_project_file = "default.project.json",
       sourcemap_file = "sourcemap.json",
     },
+
     plugin = {
       enabled = true,
       port = 3667,
     },
-    server = {
-      settings = {
-        -- https://github.com/folke/neoconf.nvim/blob/main/schemas/luau_lsp.json
+
+    -- ✅ modern replacement for `server.settings`
+    lsp = {
+      config = {
         ["luau-lsp"] = {
           completion = {
-            imports = {
-              enabled = true, -- enable auto imports
-            },
+            imports = { enabled = true },
           },
         },
       },

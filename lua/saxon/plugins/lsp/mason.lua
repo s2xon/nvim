@@ -43,12 +43,13 @@ return {
       },
     })
 
-    require("lspconfig").clangd.setup({
+    -- modern LSP config (Neovim 0.11+)
+    vim.lsp.config("clangd", {
       settings = {
         clangd = {
           ["clangd.arguments"] = {
             "--clang-tidy", -- Enable clang-tidy if needed
-            "--enable-config", -- Enable to use .clangd config
+            "--enable-config", -- Use .clangd config if present
           },
           ["clangd.formatting"] = {
             SpacesInAngles = false, -- Disable spaces in angle brackets
@@ -57,6 +58,10 @@ return {
       },
     })
 
+    -- enable clangd after defining config
+    vim.lsp.enable("clangd")
+
+    -- tool installer
     mason_tool_installer.setup({
       ensure_installed = {
         "prettier", -- prettier formatter

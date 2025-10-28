@@ -8,12 +8,13 @@ return {
     { "folke/neodev.nvim", opts = {} },
   },
   config = function()
-    local lspconfig = require("lspconfig")
     local mason_lspconfig = require("mason-lspconfig")
     local cmp_nvim_lsp = require("cmp_nvim_lsp")
     local keymap = vim.keymap
 
-    -- Keybinds on LSP attach
+    --------------------------------------------------------------------------
+    --  Keymaps for when LSP attaches
+    --------------------------------------------------------------------------
     local on_attach = function(_, bufnr)
       local opts = { noremap = true, silent = true, buffer = bufnr }
 
@@ -27,7 +28,7 @@ return {
         { desc = "Go to type definition", buffer = bufnr }
       )
       keymap.set({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, { desc = "Code Action", buffer = bufnr })
-      keymap.set("n", "<leader>rn", vim.lsp.buf.rename, { desc = "Rename", buffer = bufnr })
+      keymap.set("n", "<leader>rn", vim.lsp.buf.rename, { desc = "Rename Symbol", buffer = bufnr })
       keymap.set(
         "n",
         "<leader>D",
@@ -41,19 +42,24 @@ return {
       keymap.set("n", "<leader>rs", ":LspRestart<CR>", { desc = "Restart LSP", buffer = bufnr })
     end
 
+    --------------------------------------------------------------------------
+    --  Capabilities
+    --------------------------------------------------------------------------
     local capabilities = cmp_nvim_lsp.default_capabilities()
 
-    -- Setup SourceKit separately (manual config)
-    local defaultLSPs = { "sourcekit" }
-    for _, lsp in ipairs(defaultLSPs) do
-      lspconfig[lsp].setup({
-        capabilities = capabilities,
-        on_attach = on_attach,
-        cmd = lsp == "sourcekit" and { vim.trim(vim.fn.system("xcrun -f sourcekit-lsp")) } or nil,
-      })
-    end
+    --------------------------------------------------------------------------
+    --  SourceKit (manual macOS setup)
+    --------------------------------------------------------------------------
+    vim.lsp.config("sourcekit", {
+      capabilities = capabilities,
+      on_attach = on_attach,
+      cmd = { vim.trim(vim.fn.system("xcrun -f sourcekit-lsp")) },
+    })
+    vim.lsp.enable("sourcekit")
 
-    -- Setup diagnostic symbols
+    --------------------------------------------------------------------------
+    --  Diagnostic signs
+    --------------------------------------------------------------------------
     vim.diagnostic.config({
       signs = {
         text = {
@@ -64,19 +70,21 @@ return {
         },
       },
     })
-    -- Setup Mason + mason-lspconfig
+
+    --------------------------------------------------------------------------
+    --  Mason integration
+    --------------------------------------------------------------------------
     mason_lspconfig.setup()
 
-    mason_lspconfig.setup_handlers({
-      function(server_name)
-        lspconfig[server_name].setup({
-          capabilities = capabilities,
-          on_attach = on_attach,
-        })
-      end,
+    -- Get all servers installed by Mason
+    local servers = mason_lspconfig.get_installed_servers()
 
-      ["svelte"] = function()
-        lspconfig["svelte"].setup({
+    --------------------------------------------------------------------------
+    --  Define server-specific configs
+    --------------------------------------------------------------------------
+    local custom = {
+      svelte = function()
+        vim.lsp.config("svelte", {
           capabilities = capabilities,
           on_attach = function(client, bufnr)
             on_attach(client, bufnr)
@@ -88,18 +96,20 @@ return {
             })
           end,
         })
+        vim.lsp.enable("svelte")
       end,
 
-      ["graphql"] = function()
-        lspconfig["graphql"].setup({
+      graphql = function()
+        vim.lsp.config("graphql", {
           capabilities = capabilities,
           on_attach = on_attach,
           filetypes = { "graphql", "gql", "svelte", "typescriptreact", "javascriptreact" },
         })
+        vim.lsp.enable("graphql")
       end,
 
-      ["emmet_ls"] = function()
-        lspconfig["emmet_ls"].setup({
+      emmet_ls = function()
+        vim.lsp.config("emmet_ls", {
           capabilities = capabilities,
           on_attach = on_attach,
           filetypes = {
@@ -113,24 +123,37 @@ return {
             "svelte",
           },
         })
+        vim.lsp.enable("emmet_ls")
       end,
 
-      ["lua_ls"] = function()
-        lspconfig["lua_ls"].setup({
+      lua_ls = function()
+        vim.lsp.config("lua_ls", {
           capabilities = capabilities,
           on_attach = on_attach,
           settings = {
             Lua = {
-              diagnostics = {
-                globals = { "vim" },
-              },
-              completion = {
-                callSnippet = "Replace",
-              },
+              diagnostics = { globals = { "vim" } },
+              completion = { callSnippet = "Replace" },
             },
           },
         })
+        vim.lsp.enable("lua_ls")
       end,
-    })
+    }
+
+    --------------------------------------------------------------------------
+    --  Enable all servers (custom or default)
+    --------------------------------------------------------------------------
+    for _, server in ipairs(servers) do
+      if custom[server] then
+        custom[server]() -- use custom setup
+      else
+        vim.lsp.config(server, {
+          capabilities = capabilities,
+          on_attach = on_attach,
+        })
+        vim.lsp.enable(server)
+      end
+    end
   end,
 }
