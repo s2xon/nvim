@@ -13,7 +13,7 @@ return {
     local keymap = vim.keymap
 
     --------------------------------------------------------------------------
-    --  Keymaps for when LSP attaches
+    --  LSP keymaps
     --------------------------------------------------------------------------
     local on_attach = function(_, bufnr)
       local opts = { noremap = true, silent = true, buffer = bufnr }
@@ -40,6 +40,14 @@ return {
       keymap.set("n", "]d", vim.diagnostic.goto_next, { desc = "Next diagnostic", buffer = bufnr })
       keymap.set("n", "K", vim.lsp.buf.hover, { desc = "Hover Docs", buffer = bufnr })
       keymap.set("n", "<leader>rs", ":LspRestart<CR>", { desc = "Restart LSP", buffer = bufnr })
+
+      -- Autoformat on save for supported servers
+      vim.api.nvim_create_autocmd("BufWritePre", {
+        buffer = bufnr,
+        callback = function()
+          vim.lsp.buf.format({ async = false })
+        end,
+      })
     end
 
     --------------------------------------------------------------------------
@@ -48,17 +56,7 @@ return {
     local capabilities = cmp_nvim_lsp.default_capabilities()
 
     --------------------------------------------------------------------------
-    --  SourceKit (manual macOS setup)
-    --------------------------------------------------------------------------
-    vim.lsp.config("sourcekit", {
-      capabilities = capabilities,
-      on_attach = on_attach,
-      cmd = { vim.trim(vim.fn.system("xcrun -f sourcekit-lsp")) },
-    })
-    vim.lsp.enable("sourcekit")
-
-    --------------------------------------------------------------------------
-    --  Diagnostic signs
+    --  Diagnostic icons
     --------------------------------------------------------------------------
     vim.diagnostic.config({
       signs = {
@@ -76,11 +74,10 @@ return {
     --------------------------------------------------------------------------
     mason_lspconfig.setup()
 
-    -- Get all servers installed by Mason
     local servers = mason_lspconfig.get_installed_servers()
 
     --------------------------------------------------------------------------
-    --  Define server-specific configs
+    --  Custom setups for specific servers
     --------------------------------------------------------------------------
     local custom = {
       svelte = function()
@@ -139,14 +136,33 @@ return {
         })
         vim.lsp.enable("lua_ls")
       end,
+
+      -- ✅ Rust (custom setup)
+      rust_analyzer = function()
+        vim.lsp.config("rust_analyzer", {
+          capabilities = capabilities,
+          on_attach = on_attach,
+          cmd = {
+            "/Users/saxon/.rustup/toolchains/stable-aarch64-apple-darwin/bin/rust-analyzer",
+          },
+          settings = {
+            ["rust-analyzer"] = {
+              cargo = { allFeatures = true },
+              checkOnSave = { command = "clippy" },
+              rustfmt = { overrideCommand = { "rustfmt", "--edition", "2021" } },
+            },
+          },
+        })
+        vim.lsp.enable("rust_analyzer")
+      end,
     }
 
     --------------------------------------------------------------------------
-    --  Enable all servers (custom or default)
+    --  Enable all servers
     --------------------------------------------------------------------------
     for _, server in ipairs(servers) do
       if custom[server] then
-        custom[server]() -- use custom setup
+        custom[server]()
       else
         vim.lsp.config(server, {
           capabilities = capabilities,
