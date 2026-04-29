@@ -24,9 +24,16 @@ return {
     end
 
     require("flutter-tools").setup({
+      flutter_path = "/opt/homebrew/share/flutter/bin/flutter",
       lsp = {
         on_attach = on_attach,
         capabilities = require("cmp_nvim_lsp").default_capabilities(),
+        root_dir = function(fname)
+          local util = require("lspconfig.util")
+          -- Root at the monorepo (git root), so the analysis server sees all packages
+          return util.root_pattern(".git")(fname)
+            or util.root_pattern("pubspec.yaml")(fname)
+        end,
       },
     })
   end,

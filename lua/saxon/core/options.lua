@@ -1,5 +1,8 @@
 vim.cmd("let g:netrw_liststyle = 3")
 
+-- Ensure Homebrew and cargo binaries are visible to nvim subprocesses
+vim.env.PATH = "/opt/homebrew/bin:/Users/saxon.payne/.cargo/bin:/Users/saxon.payne/Library/Python/3.9/bin:" .. vim.env.PATH
+
 local opt = vim.opt
 
 opt.relativenumber = true

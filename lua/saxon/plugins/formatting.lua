@@ -21,6 +21,8 @@ return {
         lua = { "stylua" },
         luau = { "stylua" },
         python = { "isort", "black" },
+        swift = { "swiftformat" },
+        dart = { "dart_format" },
       },
       format_on_save = {
         lsp_fallback = true,
