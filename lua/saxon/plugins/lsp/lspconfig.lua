@@ -137,6 +137,18 @@ return {
         vim.lsp.enable("lua_ls")
       end,
 
+      -- clangd: restrict to C-family filetypes only.
+      -- We exclude "cuda" because Mac doesn't have CUDA headers locally;
+      -- treesitter handles .cu highlighting, no LSP needed for editing.
+      clangd = function()
+        vim.lsp.config("clangd", {
+          capabilities = capabilities,
+          on_attach = on_attach,
+          filetypes = { "c", "cpp", "objc", "objcpp" },
+        })
+        vim.lsp.enable("clangd")
+      end,
+
       -- ✅ Rust (custom setup)
       rust_analyzer = function()
         vim.lsp.config("rust_analyzer", {

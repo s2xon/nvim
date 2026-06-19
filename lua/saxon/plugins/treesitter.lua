@@ -1,7 +1,7 @@
 return {
   "nvim-treesitter/nvim-treesitter",
+  branch = "main",
   lazy = false, -- v1.0+ does not support lazy loading
-  build = ":TSUpdate",
   dependencies = {
     "windwp/nvim-ts-autotag",
   },
@@ -9,12 +9,22 @@ return {
     -- v1.0+ API: setup() only accepts install_dir override
     require("nvim-treesitter").setup()
 
-    -- Install parsers (async, no-op if already installed)
-    require("nvim-treesitter").install({
-      "json", "javascript", "typescript", "tsx", "yaml", "html", "css",
-      "prisma", "markdown", "markdown_inline", "svelte", "graphql", "bash",
-      "lua", "vim", "dockerfile", "gitignore", "query", "vimdoc",
-      "c", "dart", "go", "cpp", "cmake",
+    -- Install parsers after lazy.nvim finishes loading (main branch exposes
+    -- `install` asynchronously; calling it inline yields nil)
+    vim.api.nvim_create_autocmd("User", {
+      pattern = "VeryLazy",
+      once = true,
+      callback = function()
+        local ok, ts = pcall(require, "nvim-treesitter")
+        if ok and type(ts.install) == "function" then
+          ts.install({
+            "json", "javascript", "typescript", "tsx", "yaml", "html", "css",
+            "prisma", "markdown", "markdown_inline", "svelte", "graphql", "bash",
+            "lua", "vim", "dockerfile", "gitignore", "query", "vimdoc",
+            "c", "dart", "go", "cpp", "cmake", "cuda",
+          })
+        end
+      end,
     })
 
     -- Autotag for HTML/JSX/TSX
