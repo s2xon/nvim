@@ -5,79 +5,88 @@ return {
     local lualine = require("lualine")
     local lazy_status = require("lazy.status") -- to configure lazy pending updates count
 
-    --[[
-    local colors = {
-      blue = "#89b4f3",
-      green = "##94e2d5",
-      violet = "#b4befe",
-      yellow = "#fab387",
-      red = "#f38ba8",
-      fg = "1e1e2e",
-      bg = "#CDD6F4",
-      inactive_bg = "#11111b",
-    }
-    --]]
-    local colors = {
-      blue = "#7aa2f7", -- accent / links
-      green = "#9ece6a", -- success / diffs
-      violet = "#bb9af7", -- special keywords
-      yellow = "#e0af68", -- warnings / highlights
-      red = "#f7768e", -- errors
-      fg = "#959cbd", -- normal foreground (your VS Code override)
-      bg = "#1a1b26", -- main background
-      inactive_bg = "#202330", -- dim-selection / inactive panels
-    }
+    -- Pull colors from the ACTIVE colorscheme's highlight groups so the
+    -- statusline re-themes itself whenever the `theme` CLI switches themes.
+    local function hl(group, attr)
+      local ok, h = pcall(vim.api.nvim_get_hl, 0, { name = group, link = false })
+      if ok and h and h[attr] then
+        return string.format("#%06x", h[attr])
+      end
+    end
+    local function pick(attr, groups, fallback)
+      for _, g in ipairs(groups) do
+        local v = hl(g, attr)
+        if v then
+          return v
+        end
+      end
+      return fallback
+    end
 
-    local my_lualine_theme = {
-      normal = {
-        a = { bg = colors.blue, fg = colors.bg, gui = "bold" },
-        b = { bg = colors.bg, fg = colors.fg },
-        c = { bg = colors.bg, fg = colors.fg },
-      },
-      insert = {
-        a = { bg = colors.green, fg = colors.bg, gui = "bold" },
-        b = { bg = colors.bg, fg = colors.fg },
-        c = { bg = colors.bg, fg = colors.fg },
-      },
-      visual = {
-        a = { bg = colors.violet, fg = colors.bg, gui = "bold" },
-        b = { bg = colors.bg, fg = colors.fg },
-        c = { bg = colors.bg, fg = colors.fg },
-      },
-      command = {
-        a = { bg = colors.yellow, fg = colors.bg, gui = "bold" },
-        b = { bg = colors.bg, fg = colors.fg },
-        c = { bg = colors.bg, fg = colors.fg },
-      },
-      replace = {
-        a = { bg = colors.red, fg = colors.bg, gui = "bold" },
-        b = { bg = colors.bg, fg = colors.fg },
-        c = { bg = colors.bg, fg = colors.fg },
-      },
-      inactive = {
-        a = { bg = colors.inactive_bg, fg = colors.semilightgray, gui = "bold" },
-        b = { bg = colors.inactive_bg, fg = colors.semilightgray },
-        c = { bg = colors.inactive_bg, fg = colors.semilightgray },
-      },
-    }
+    local function make_theme()
+      -- solid bar bg (themes are transparent, so fall back past Normal)
+      local bg = pick("bg", { "StatusLine", "Pmenu", "NormalFloat", "Normal" }, "#1a1b26")
+      local fg = pick("fg", { "Normal" }, "#c0caf5")
+      local muted = pick("fg", { "Comment" }, "#565f89")
+      local inactive_bg = pick("bg", { "CursorLine", "Pmenu" }, "#202330")
 
-    -- configure lualine with modified theme
-    lualine.setup({
-      options = {
-        theme = my_lualine_theme,
-      },
-      sections = {
-        lualine_x = {
-          {
-            lazy_status.updates,
-            cond = lazy_status.has_updates,
-            color = { fg = "#ff9e64" },
-          },
-          { "encoding" },
-          { "fileformat" },
-          { "filetype" },
+      local colors = {
+        blue = pick("fg", { "Function", "@function" }, "#7aa2f7"), -- normal
+        green = pick("fg", { "String", "@string" }, "#9ece6a"), -- insert
+        violet = pick("fg", { "Keyword", "@keyword", "Statement" }, "#bb9af7"), -- visual
+        yellow = pick("fg", { "WarningMsg", "@number", "Number" }, "#e0af68"), -- command
+        red = pick("fg", { "DiagnosticError", "ErrorMsg", "Error" }, "#f7768e"), -- replace
+      }
+
+      local function mode(accent)
+        return {
+          a = { bg = accent, fg = bg, gui = "bold" },
+          b = { bg = bg, fg = fg },
+          c = { bg = bg, fg = fg },
+        }
+      end
+
+      return {
+        normal = mode(colors.blue),
+        insert = mode(colors.green),
+        visual = mode(colors.violet),
+        command = mode(colors.yellow),
+        replace = mode(colors.red),
+        inactive = {
+          a = { bg = inactive_bg, fg = muted, gui = "bold" },
+          b = { bg = inactive_bg, fg = muted },
+          c = { bg = inactive_bg, fg = muted },
         },
-      },
+      }
+    end
+
+    local function setup()
+      lualine.setup({
+        options = {
+          theme = make_theme(),
+        },
+        sections = {
+          lualine_x = {
+            {
+              lazy_status.updates,
+              cond = lazy_status.has_updates,
+              color = { fg = "#ff9e64" },
+            },
+            { "encoding" },
+            { "fileformat" },
+            { "filetype" },
+          },
+        },
+      })
+    end
+
+    setup()
+
+    -- re-theme the statusline whenever the colorscheme changes
+    vim.api.nvim_create_autocmd("ColorScheme", {
+      callback = function()
+        setup()
+      end,
     })
   end,
 }
